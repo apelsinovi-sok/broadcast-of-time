@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"github.com/thinkerou/favicon"
 	"html/template"
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/gorilla/websocket"
 )
 
 var upgrade = websocket.Upgrader{
@@ -26,9 +27,9 @@ func send(conn *websocket.Conn) {
 
 }
 
-func timer(w http.ResponseWriter, r *http.Request) {
+func timer(c *gin.Context) {
 	upgrade.CheckOrigin = func(r *http.Request) bool { return true }
-	ws, err := upgrade.Upgrade(w, r, nil)
+	ws, err := upgrade.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Println(err)
 	}
@@ -37,24 +38,22 @@ func timer(w http.ResponseWriter, r *http.Request) {
 	send(ws)
 }
 
-func temp(w http.ResponseWriter, r *http.Request) {
-	//http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
+func temp(c *gin.Context) {
 	tmp, _ := template.ParseFiles("index.html")
-	err := tmp.Execute(w, "")
+	err := tmp.Execute(c.Writer, "")
 	if err != nil {
 		log.Println("Ошибка")
 	}
 }
 
-func faviconHandler(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "twitter.ico")
-}
-
 func main() {
-	http.HandleFunc("/", temp)
-	http.HandleFunc("/favicon.ico", faviconHandler)
-	http.HandleFunc("/time", timer)
-	err := http.ListenAndServe(":8080", nil)
+	server := gin.Default()
+	server.Static("/css", "css")
+	server.Use(favicon.New("./favicon.ico"))
+	server.GET("/", temp)
+	server.GET("/time", timer)
+
+	err := server.Run(":8080")
 	if err != nil {
 		log.Println(err)
 	}
