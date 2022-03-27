@@ -7,7 +7,7 @@
 </head>
 <link rel="stylesheet" href="css/style.css">
 <script>
-    let socket = new WebSocket("ws://http://52.14.163.248:7001/time");
+    let socket = new WebSocket("ws://localhost:8080/time");
     console.log("Attempting Connection...");
 
     socket.onopen = () => {
@@ -25,6 +25,13 @@
 
     socket.onmessage = (msg) => {
         document.getElementById("time").innerHTML = msg.data;
+
+    }
+
+    window.onbeforeunload = closingCode;
+    function closingCode(){
+        socket.close()
+        return null;
     }
 
 </script>
